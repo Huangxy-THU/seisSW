@@ -1,0 +1,11 @@
+#!/bin/bash
+
+iproc=$SLURM_PROCID  # ID of the source (from 0 to $numprocs-1)
+IPROC_WORKING_DIR=$( seq --format="$WORKING_DIR/%06.f/" $iproc $iproc )
+rm -rf $IPROC_WORKING_DIR
+
+if [ $iproc -eq 0 ]; then 
+   rm -rf $WORKING_DIR
+fi
+
+

@@ -1,0 +1,15 @@
+# this is on slurm system
+
+cd specfem2d
+./configure FC=ifort --with-mpi
+make clean
+make all
+
+cd Seismo-SW/lib
+make -f make_ifort clean
+make -f make_ifort
+
+cd Exp1
+./run_this_example.sh
+cd submit_job
+./submit.sh 

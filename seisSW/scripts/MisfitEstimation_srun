@@ -1,0 +1,111 @@
+#!/bin/bash
+[[ -n "${1}" ]] || { echo -e "\n### Usage ###\n./MisfitEstimation_srun \n"; exit 0 ; }
+
+iloop1=$1
+
+# pass parameter files
+source parameter
+
+# local id and directory
+iproc=$SLURM_PROCID  # ID of the source (from 0 to $numprocs-1)
+DIR_WORKING=$( seq --format="$LOCAL_DIR/%06.f/" $iproc $iproc )      # working   directory (on local nodes, where specfem runs)
+
+rm -rf $DIR_WORKING
+mkdir -p $DIR_WORKING 
+cd $DIR_WORKING
+mkdir -p DATA_obs DATA_syn  WT_basis OUTPUT_FILES SEM
+
+##echo "####### copy executables & input files ######"
+   cp -r $SUBMIT_DIR/bin/* $DIR_WORKING/
+
+######################################### target data ###################################################################
+## echo " link target model ..."
+   cp DATA/model_target.dat ./DATA/model_velocity.dat_input
+
+# Source location
+export xs=$(awk -v "line=1" 'NR==line { print $1 }' DATA/sources.dat)
+export zs=$(awk -v "line=1" 'NR==line { print $2 }' DATA/sources.dat)
+ 
+### echo " edit source location (xs) in the file 'SOURCE' "
+   FILE="./DATA/SOURCE"
+   sed -e "s/^xs.*$/xs =    $xs/g" $FILE > temp;  mv temp $FILE
+   sed -e "s/^zs.*$/zs =    $zs/g" $FILE > temp;  mv temp $FILE
+   sed -e "s/^time_function_type.*$/time_function_type = ${time_function_type} /g" $FILE > temp;  mv temp $FILE
+#   sed -e "s/^time_function_type.*$/time_function_type = 1 /g" $FILE > temp;  mv temp $FILE
+   sed -e "s/^f0.*$/f0 =    $f0/g" $FILE > temp;  mv temp $FILE
+##### edit 'Par_file' #####
+   FILE="./DATA/Par_file"
+   sed -e "s/^nt.*$/nt =    $NSTEP/g" $FILE > temp;  mv temp $FILE
+   sed -e "s/^deltat.*$/deltat =    $deltat/g" $FILE > temp;  mv temp $FILE
+   sed -e "s#^USER_T0.*#USER_T0 = $t0 #g"  $FILE > temp; mv temp $FILE
+#   sed -e "s#^USER_T0.*#USER_T0 = 50 #g"  $FILE > temp; mv temp $FILE
+   sed -e "s#^SIMULATION_TYPE.*#SIMULATION_TYPE = 1 #g"  $FILE > temp; mv temp $FILE
+   sed -e "s#^SAVE_FORWARD.*#SAVE_FORWARD = .false. #g"  $FILE > temp; mv temp $FILE
+   sed -e "s#^SU_FORMAT.*#SU_FORMAT = .true.#g"  $FILE > temp; mv temp $FILE
+
+   # cleans output files
+   rm -rf ./OUTPUT_FILES/*
+
+   ##### forward simulation (data) #####
+   ./xmeshfem2D > OUTPUT_FILES/output_mesher.txt
+   ./xspecfem2D > OUTPUT_FILES/output_solver.txt
+
+# save
+cp OUTPUT_FILES/*_file_single.bin            DATA_obs/
+
+# process & stores output (use the process flow for syn)
+  if [ ${XCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_obs/Ux_file_single.bin DATA_obs/Ux_file_single.su
+  fi
+  if [ ${YCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_obs/Uy_file_single.bin DATA_obs/Uy_file_single.su
+  fi
+  if [ ${ZCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_obs/Uz_file_single.bin DATA_obs/Uz_file_single.su
+  fi
+  if [ ${PCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_obs/pressure_file_single.bin DATA_obs/Ux_file_single.su
+  fi
+
+######################################### predicted data ###################################################################
+
+## echo " link/generate model "
+  let iloop2=$iproc
+   ./model_build.exe ${iloop1} ${iloop2} ./DATA/
+   cp ./DATA//model_current.dat ./DATA/model_velocity.dat_input
+
+   # cleans output files
+   rm -rf ./OUTPUT_FILES/*
+
+   ##### forward simulation (data) #####
+   ./xmeshfem2D > OUTPUT_FILES/output_mesher.txt
+   ./xspecfem2D > OUTPUT_FILES/output_solver.txt
+
+# save 
+cp OUTPUT_FILES/*_file_single.bin            DATA_syn/
+
+# process & stores output
+  if [ ${XCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_syn/Ux_file_single.bin DATA_syn/Ux_file_single.su
+  fi
+  if [ ${YCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_syn/Uy_file_single.bin DATA_syn/Uy_file_single.su
+  fi
+  if [ ${ZCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_syn/Uz_file_single.bin DATA_syn/Uz_file_single.su
+  fi
+  if [ ${PCOMP} -eq 1 ]; then
+  sh syn_process.sh DATA_syn/pressure_file_single.bin DATA_syn/Ux_file_single.su
+  fi
+
+######################################### Misfit Estimation ###################################################################
+
+#echo "finish forward simulation"
+  # save adjoint source or not 
+  is_adjoint=0
+   ./adj.exe $is_adjoint
+
+# save result
+  cp ./misfit.dat $SUBMIT_RESULT/misfit_category_${iloop1}_${iloop2}
+
+

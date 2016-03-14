@@ -1,0 +1,12 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Sat Mar 12 17:14:01 2016
+        MODULE FUNC_ZENER__genmod
+          INTERFACE 
+            SUBROUTINE FUNC_ZENER(X,AFUNC,N,QREF,POINT)
+              INTEGER(KIND=4), INTENT(IN) :: N
+              REAL(KIND=8), INTENT(IN) :: X
+              REAL(KIND=8), INTENT(OUT) :: AFUNC(1:N)
+              REAL(KIND=8), INTENT(IN) :: QREF
+              REAL(KIND=8), INTENT(IN) :: POINT(1:N)
+            END SUBROUTINE FUNC_ZENER
+          END INTERFACE 
+        END MODULE FUNC_ZENER__genmod

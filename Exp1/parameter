@@ -1,0 +1,143 @@
+#!/bin/bash
+
+# Geophsyics,2015, Experiment1 figure 1-5 
+Job_title='Geop-2015-E1'
+system='slurm'  # slurm, lsf or pbs
+queue='tiger'   #serial,tiger(princeton) LAURE_USERS(Total), rdhpc(Total) ...
+max_ntasks_per_node=16 # max ntasks-per-node
+WallTime=10
+job='kernel'
+# sensitivity only 
+sensitivity=false
+
+package_path='/tigress/yanhuay/seisSW/seisSW'
+specfem_path='/tigress/yanhuay/seisSW/specfem2d'
+working_path='/scratch/gpfs/yanhuay/'
+result_path='./RESULTS'
+compiler='ifort'
+endian='little_endian'
+
+ReStart=true   # true--Relaunch all files; false--Start from current status
+
+# if observations exist
+ExistDATA=false
+# directory for observations
+DATA_DIR=''
+
+#########################################  models ###################################################################
+isotropy=true
+attenuation=false
+anisotropy=false
+target_velocity_file='/tigress/yanhuay/seisSW/Exp1/model/model_target.dat'
+target_attenuation_file=''
+target_anisotropy_file=''
+initial_velocity_file='/tigress/yanhuay/seisSW/Exp1/model/model_initial.dat'
+initial_attenuation_file=''
+initial_anisotropy_file=''
+
+
+######################################### forward modeling information ############################################### 
+# number of samples in data
+NSTEP=5500
+# sample rate
+deltat=0.0001 #s  
+f0=40
+# first sample (0.0 or greater than 1.2/f0)
+t0=0.0
+time_function_type=1
+amp_factor=1.0d10
+# number of receivers
+NREC=401
+# number of sources
+NSRC=39
+# number of samples in model
+NX=36100
+######################################### Adjoint/Inversion information ############################################### 
+# total component
+NC=4
+# measurements components
+XCOMP=true           # compute x traces
+YCOMP=false            # compute y traces
+ZCOMP=true           # compute z traces
+PCOMP=false            # compute p traces
+
+# adjoint source format 
+SU_adjoint=false
+
+# misfit type (CC WD ET ED IP MT MA) 
+misfit_type=ED
+
+# update parameters
+model_Vp=false
+model_Vs=true
+model_Rho=false
+scale_Rho_Vp=false
+
+# inversion parameters (kernels)
+use_rho_kappa_mu_kernel=false
+use_rhop_alpha_beta_kernel=true
+use_rhop_phip_betap_kernel=false
+
+# optimization(SD CG QN)
+opt_scheme=QN
+# periodic CG steps (only valid when opt_scheme=CG)
+CGSTEPMAX=10
+# CG scheme (PR ...; only valid when opt_scheme=CG)
+CG_scheme=PR
+# BFGS previous steps invloved (only valid when opt_scheme=QN)
+BFGS_STEPMAX=4
+
+# iteration limit
+iter_start=1
+iter_end=1
+# line search method 
+backtracking=false
+# line search step length
+initial_step_length=0.04
+# min line search step length
+min_step_length=0.01
+max_step=5
+
+#misfit catagory
+Nmisfit=1
+
+######################################### preprocessing information ############################################### 
+## wavelet transform (scale)
+Wscale=8
+wavelet_path='/tigress/yanhuay/seisSW/seisSW/WT_basis'
+
+## window
+is_window=1
+window_type=3 
+# velocity limits
+V_fast=900
+V_slow=720
+
+## laplace damping 
+is_laplace=0
+S_x=0.1
+S_t=0.0
+
+## mute far/near offset
+mute_near=0
+offset_near=10
+mute_far=0
+offset_far=50
+
+## exclusively for syn 
+src_est=false
+scaling=false
+
+######################################### postprocessing information ############################################### 
+# smooth
+smooth=true
+smooth_x=5
+smooth_z=3
+# precondition
+precond=true
+precond_type=2
+mask_source=true
+mask_file=''
+
+## Display details
+DISPLAY_DETAILS=false

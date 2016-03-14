@@ -1,0 +1,7 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Wed Oct 21 17:45:51 2015
+        MODULE SYNC_ALL__genmod
+          INTERFACE 
+            SUBROUTINE SYNC_ALL
+            END SUBROUTINE SYNC_ALL
+          END INTERFACE 
+        END MODULE SYNC_ALL__genmod

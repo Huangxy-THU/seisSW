@@ -1,0 +1,9 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Wed Oct 21 17:45:51 2015
+        MODULE MIN_ALL_I__genmod
+          INTERFACE 
+            SUBROUTINE MIN_ALL_I(SENDBUF,RECVBUF)
+              INTEGER(KIND=4) :: SENDBUF
+              INTEGER(KIND=4) :: RECVBUF
+            END SUBROUTINE MIN_ALL_I
+          END INTERFACE 
+        END MODULE MIN_ALL_I__genmod

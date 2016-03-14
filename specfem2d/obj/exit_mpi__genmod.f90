@@ -1,0 +1,8 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Sat Mar 12 17:15:11 2016
+        MODULE EXIT_MPI__genmod
+          INTERFACE 
+            SUBROUTINE EXIT_MPI(ERROR_MSG)
+              CHARACTER(*) :: ERROR_MSG
+            END SUBROUTINE EXIT_MPI
+          END INTERFACE 
+        END MODULE EXIT_MPI__genmod
