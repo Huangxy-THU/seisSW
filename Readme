@@ -5,7 +5,7 @@ cd specfem2d
 make clean
 make all
 
-cd Seismo-SW/lib
+cd seisSW/lib
 make -f make_ifort clean
 make -f make_ifort
 
