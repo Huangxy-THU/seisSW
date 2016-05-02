@@ -1,32 +1,22 @@
 #!/bin/bash
-#SBATCH -p rdhpc
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH -- cpu-per-task=4
-#SBATCH --time=60
-#SBATCH --error=job_info/error
-#SBATCH --output=job_info/output
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-#SBATCH --mail-user=yanhuay@princeton.edu
 
+source parameter
 
-ulimit -s unlimited
-
-cd $SLURM_SUBMIT_DIR
-
-echo "$SLURM_JOB_NODELIST"  >  ./job_info/NodeList
-echo "$SLURM_JOB_ID"  >  ./job_info/JobID
-export user=$(whoami)
+if [ $system == 'slurm' ]; then
+    # Submit directory
+    export SUBMIT_DIR=$SLURM_SUBMIT_DIR
+    echo "$SLURM_JOB_NODELIST"  >  ./job_info/NodeList
+    echo "$SLURM_JOBID"  >  ./job_info/JobID
+elif [ $system == 'pbs' ]; then
+    # Submit directory
+    export SUBMIT_DIR=$PBS_O_WORKDIR
+    echo "$PBS_NODEFILE"  >  ./job_info/NodeList
+    echo "$PBS_JOBID"  >  ./job_info/JobID
+fi
+cd $SUBMIT_DIR
 
 #################### input parameters ###################################################
-source parameter
-echo 
-echo "Request nodes is $SLURM_NNODES, Request tasks per node is $SLURM_NTASKS_PER_NODE"
-echo 
-
 # directories
-export SUBMIT_DIR=$SLURM_SUBMIT_DIR
 export SCRIPTS_DIR="$package_path/scripts"
 export WORKING_DIR="$working_path/$Job_title"    # directory on local nodes, where specfem runs
 export SUBMIT_RESULT="$SLURM_SUBMIT_DIR/$result_path/Scale${Wscale}"     # final results
@@ -59,7 +49,12 @@ mkdir -p $SUBMIT_RESULT  $WORKING_DIR
 
 echo
 echo "Prepare data ...... "
- srun -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation_srun 2> ./job_info/error_target
+
+if [ $system == 'slurm' ]; then
+    srun -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation.sh 2> ./job_info/error_target
+elif [ $system == 'pbs' ]; then
+    pbsdsh -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation.sh 2> ./job_info/error_target
+fi
 echo "Finish data preparation"
 echo "READY for inversion  .... "
 
@@ -75,7 +70,7 @@ cp -r $SUBMIT_DIR/job_info/output $SUBMIT_RESULT/
 
 echo
 echo " clean up local nodes (wait) ...... "
-#srun -n $NSRC $SCRIPTS_DIR/Clean_srun 2> ./job_info/error_clean 
+rm -rf $WORKING_DIR
 
 echo
 echo "******************well done*******************************"

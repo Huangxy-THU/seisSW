@@ -1,14 +1,18 @@
 #!/bin/bash
 
-[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./UpdateForwardSimulation_srun iter\n"; exit 0 ; }
+[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./UpdateForwardSimulation iter\n"; exit 0 ; }
  
 # pass parameter files
 source parameter
 
-# local id and directory
-iproc=$SLURM_PROCID  # ID of the source (from 0 to $numprocs-1)
-IPROC_WORKING_DIR=$( seq --format="$WORKING_DIR/%06.f/" $iproc $iproc )  
+# local id (from 0 to $ntasks-1)
+if [ $system == 'slurm' ]; then
+    iproc=$SLURM_PROCID
+elif [ $system == 'pbs' ]; then
+    iproc=$PBS_VNODENUM
+fi
 
+IPROC_WORKING_DIR=$( seq --format="$WORKING_DIR/%06.f/" $iproc $iproc )  
 
 cd $IPROC_WORKING_DIR
 

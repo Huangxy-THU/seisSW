@@ -3,7 +3,6 @@
 source $SUBMIT_DIR/parameter
 
 SU_process=0
-tshift=0.0
 # dt in microseconds
 dt=$(echo $deltat*1000000 | bc -l )
 # low-pass filtering
@@ -44,18 +43,13 @@ output_file=$2
 
 cp $input_file in_file
 
+if [ $SU_process -eq 1 ]; then
 #little to big endian
 if [[ $endian = "little_endian" ]]; then
 suoldtonew <in_file> out_file
 cp out_file in_file
 fi
 
-# shift
-tmin=$tshift
-sushift<in_file tmin=$tmin dt=$dt  |suchw key1=delrt a=0 >out_file
-cp out_file in_file
-
-if [ $SU_process -eq 1 ]; then
 
 if [ $dip_filter -eq 1 ]; then
  sushw<in_file key=d2 a=$dr>out_file
@@ -103,13 +97,14 @@ if [ $LPF -eq 1 ]; then
    cp out_file in_file
 fi
 
-fi # SU_process
 
 # convert foreign to native/system endian 
 if [[ $endian = "little_endian" ]]; then
     suswapbytes <in_file format=0 ns=$NSTEP >out_file
     cp out_file in_file
 fi
+
+fi # SU_process
 
   ## save final result
   cp in_file $output_file

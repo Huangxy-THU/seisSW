@@ -1,31 +1,27 @@
 #!/bin/bash
-#SBATCH -p serial
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH --time=60
-#SBATCH --error=job_info/error
-#SBATCH --output=job_info/output
-
 
 ulimit -s unlimited
 
-cd $SLURM_SUBMIT_DIR
+source parameter
 
-echo "$SLURM_JOB_NODELIST"  >  ./job_info/NodeList
-echo "$SLURM_JOB_ID"  >  ./job_info/JobID
-export user=$(whoami)
+if [ $system == 'slurm' ]; then
+    # Submit directory
+    export SUBMIT_DIR=$SLURM_SUBMIT_DIR
+    echo "$SLURM_JOB_NODELIST"  >  ./job_info/NodeList
+    echo "$SLURM_JOBID"  >  ./job_info/JobID
+elif [ $system == 'pbs' ]; then
+    # Submit directory
+    export SUBMIT_DIR=$PBS_O_WORKDIR
+    echo "$PBS_NODEFILE"  >  ./job_info/NodeList
+    echo "$PBS_JOBID"  >  ./job_info/JobID
+fi
+cd $SUBMIT_DIR
 
 #################### input parameters ###################################################
-source parameter
-echo 
-echo "Request nodes is $SLURM_NNODES, Request tasks per node is $SLURM_NTASKS_PER_NODE"
-echo 
-
 # directories
-export SUBMIT_DIR=$SLURM_SUBMIT_DIR
 export SCRIPTS_DIR="$package_path/scripts" 
-export WORKING_DIR="$working_path/$Job_title"    # directory on local nodes, where specfem runs
-export SUBMIT_RESULT="$result_path/Scale${Wscale}_${misfit_type}"     # final results
+export WORKING_DIR="$working_path/$Job_title/"  # directory on local nodes, where specfem runs
+export SUBMIT_RESULT="$result_path/$job/Scale${Wscale}_${misfit_type}"     # final results
 
 echo 
 echo "Submit job << $Job_title >> in : $SUBMIT_DIR  "
@@ -64,14 +60,18 @@ fi
 
 echo
 echo "Prepare data ...... "
- srun -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation_srun 2> ./job_info/error_target
+if [ $system == 'slurm' ]; then
+    srun -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation.sh 2> ./job_info/error_target
+elif [ $system == 'pbs' ]; then
+    pbsdsh  -n $NSRC -W 0 $SCRIPTS_DIR/TargetForwardSimulation.sh 2> ./job_info/error_target
+fi
 echo "Finish data preparation"
 echo "READY for inversion  .... "
 
 
 echo
 echo "********************************************************************************************************"
-echo "           Welcome Scale $Wscale ${misfit_type}  kernel"
+echo "           Welcome Scale $Wscale ${misfit_type} $job"
 echo "********************************************************************************************************"
 echo
 
@@ -81,8 +81,12 @@ export current_velocity_file=$WORKING_DIR/model_current.dat
 export current_attenuation_file=$initial_attenuation_file
 export current_anisotropy_file=$initial_anisotropy_file
 export compute_adjoint=true
- srun -n $NSRC -W 0 $SCRIPTS_DIR/CurrentForwardAdjoint_srun 2> ./job_info/error_current_simulation
- echo "Finish Forward/Adjoint simulation for current model"
+if [ $system == 'slurm' ]; then
+    srun -n $NSRC -W 0 $SCRIPTS_DIR/CurrentForwardAdjoint.sh 2> ./job_info/error_current_simulation
+elif [ $system == 'pbs' ]; then
+    pbsdsh -n $NSRC -W 0 $SCRIPTS_DIR/CurrentForwardAdjoint.sh 2> ./job_info/error_current_simulation
+fi
+echo "Finish Forward/Adjoint simulation for current model"
 
 
 echo 

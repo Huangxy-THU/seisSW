@@ -4,9 +4,13 @@
 Job_title='Geop-2015-E1'
 system='slurm'  # slurm, lsf or pbs
 queue='tiger'   #serial,tiger(princeton) LAURE_USERS(Total), rdhpc(Total) ...
-max_ntasks_per_node=16 # max ntasks-per-node
+max_nproc_per_node=16 # max number of processors per node
+ntasks=1
 WallTime=10
 job='kernel'
+compiler='ifort'
+endian='little_endian'
+
 # sensitivity only 
 sensitivity=false
 
@@ -14,8 +18,6 @@ package_path='/tigress/yanhuay/seisSW/seisSW'
 specfem_path='/tigress/yanhuay/seisSW/specfem2d'
 working_path='/scratch/gpfs/yanhuay/'
 result_path='./RESULTS'
-compiler='ifort'
-endian='little_endian'
 
 ReStart=true   # true--Relaunch all files; false--Start from current status
 

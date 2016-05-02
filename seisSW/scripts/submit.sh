@@ -14,45 +14,42 @@ rm -rf bin
 mkdir bin
 cp -r $specfem_path/bin/* ./bin/
 
-if $ReStart; then
 echo 
 echo " create new job_info file ..."
 rm -rf job_info
 mkdir job_info
-fi
 
 echo 
 echo " create result file ..."
-mkdir -p $result_path
+mkdir -p RESULTS
 
 echo
 echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 echo
 echo
 
-if [ "$job" ==  "modeling" ]
+workflow_DIR="$package_path/workflow"
+
+if [ "$job" ==  "modeling" ] || [ "$job" ==  "Modeling" ]
 then
 echo " ########################################################"
 echo " Forward modeling .." 
 echo " ########################################################"
-SCRIPTS_DIR="$package_path/scripts"
-cp $SCRIPTS_DIR/ForwardModeling_$system.sh $Job_title.sh
+cp $workflow_DIR/Modeling.sh $Job_title.sh
 
-elif [ "$job" ==  "kernel" ]
+elif [ "$job" ==  "kernel" ] || [ "$job" ==  "Kernel" ]
 then
 echo " ########################################################"
 echo " Adjoint Inversion .." 
 echo " ########################################################"
-SCRIPTS_DIR="$package_path/scripts"
-cp $SCRIPTS_DIR/Kernel_$system.sh $Job_title.sh
+cp $workflow_DIR/Kernel.sh $Job_title.sh
 
 elif [ "$job" ==  "inversion" ]
 then
 echo " ########################################################"
 echo " Adjoint Inversion .." 
 echo " ########################################################"
-SCRIPTS_DIR="$package_path/scripts"
-cp $SCRIPTS_DIR/AdjointInversion_$system.sh $Job_title.sh
+cp $workflow_DIR/AdjointInversion.sh $Job_title.sh
 fi
 
 echo
@@ -63,37 +60,40 @@ cp $package_path/scripts/renew_parameter.sh ./
 
 echo 
 echo " complile source codes ... "
-MAKE_DIR="$package_path/make"
+rm -rf *.mod make_file
 cp $package_path/make/make_$compiler ./make_file
 FILE="make_file"
 sed -e "s#^SRC_DIR=.*#SRC_DIR=$package_path/SRC#g"  $FILE > temp;  mv temp $FILE
 make -f make_file clean
 make -f make_file
 
-
 echo 
 echo " edit request nodes and tasks ..."
-if [ $NSRC -le ${max_ntasks_per_node} ] 
+if [ $NSRC -le ${max_nproc_per_node} ] 
 then
    ntasks=$NSRC 
    nodes=1
 else
-  ntasks=${max_ntasks_per_node}
+  ntasks=${max_nproc_per_node}
   nodes=$(echo $(echo "$NSRC $ntasks" | awk '{ print $1/$2 }') | awk '{printf("%d\n",$0+=$0<0?0:0.999)}')
 fi
 echo " Request $nodes nodes and $ntasks tasks per node"
 
-   FILE="$Job_title.sh"
-   sed -e "s#^\#SBATCH -p.*#\#SBATCH -p $queue#g"  $FILE > temp;  mv temp $FILE
-   sed -e "s#^\#SBATCH --nodes=.*#\#SBATCH --nodes=$nodes#g"  $FILE > temp;  mv temp $FILE
-   sed -e "s#^\#SBATCH --ntasks-per-node=.*#\#SBATCH --ntasks-per-node=$ntasks#g"  $FILE > temp;  mv temp $FILE
-   sed -e "s#^\#SBATCH --time=.*#\#SBATCH --time=$WallTime#g"  $FILE > temp;  mv temp $FILE
 echo
 echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 echo
 
-echo " submit job sbatch $Job_title.sh"
+echo "submit job"
 echo
 
-sbatch $Job_title.sh
+if [ $system == 'slurm' ]; then
+    echo "slurm system ..."
+    echo "sbatch -p $queue -N $nodes --ntasks-per-node=$ntasks --time=$WallTime --error=job_info/error --output=job_info/output $Job_title.sh"
+    sbatch -p $queue -N $nodes --ntasks-per-node=$ntasks --time=$WallTime --error=job_info/error --output=job_info/output $Job_title.sh
+
+elif [ $system == 'pbs' ]; then
+    echo "pbs system ..."
+    echo
+    qsub -q $queue -l nodes=$nodes:ppn=$max_nproc_per_node -l --walltime=$WallTime -e job_info/error -o job_info/output  $Job_title.sh
+fi
 echo

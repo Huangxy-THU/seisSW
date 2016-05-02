@@ -1,12 +1,17 @@
 #!/bin/bash
 
-[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./CurrentForwardAdjoint_srun iter\n"; exit 0 ; }
+[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./CurrentForwardAdjoint iter\n"; exit 0 ; }
  
 # pass parameter files
 source parameter
 
-# local id and directory
-iproc=$SLURM_PROCID  # ID of the source (from 0 to $numprocs-1)
+# local id (from 0 to $ntasks-1)
+if [ $system == 'slurm' ]; then
+    iproc=$SLURM_PROCID  
+elif [ $system == 'pbs' ]; then
+    iproc=$PBS_VNODENUM
+fi
+
 IPROC_WORKING_DIR=$( seq --format="$WORKING_DIR/%06.f/" $iproc $iproc )  
 IPROC_DATA_DIR=$( seq --format="$DATA_DIR/%06.f/" $iproc $iproc )
 

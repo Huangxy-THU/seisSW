@@ -1,8 +1,0 @@
-        !COMPILER-GENERATED INTERFACE MODULE: Wed Oct 21 17:45:51 2015
-        MODULE WAIT_REQ__genmod
-          INTERFACE 
-            SUBROUTINE WAIT_REQ(REQ)
-              INTEGER(KIND=4) :: REQ
-            END SUBROUTINE WAIT_REQ
-          END INTERFACE 
-        END MODULE WAIT_REQ__genmod

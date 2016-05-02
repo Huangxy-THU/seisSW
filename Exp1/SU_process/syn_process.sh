@@ -41,13 +41,14 @@ output_file=$2
 
 cp $input_file in_file
 
+
+if [ $SU_process -eq 1 ]; then
+
 #little to big endian
 if [[ $endian = "little_endian" ]]; then
 suoldtonew <in_file> out_file
 cp out_file in_file
 fi
-
-if [ $SU_process -eq 1 ]; then
 
 if [ $dip_filter -eq 1 ]; then
  sushw<in_file key=d2 a=$dr>out_file
@@ -95,13 +96,14 @@ if [ $LPF -eq 1 ]; then
    cp out_file in_file
 fi
 
-fi # SU_process
-
 # convert foreign to native/system endian 
 if [[ $endian = "little_endian" ]]; then
     suswapbytes <in_file format=0 ns=$NSTEP >out_file
     cp out_file in_file
 fi
+
+fi # SU_process
+
 
   ## save final result
   cp in_file $output_file

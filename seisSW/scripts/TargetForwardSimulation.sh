@@ -1,11 +1,16 @@
 #!/bin/bash
-[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./TargetForwardSimulation_srun \n"; exit 0 ; }
+[[ -n "${0}" ]] || { echo -e "\n### Usage ###\n./TargetForwardSimulation \n"; exit 0 ; }
 
 # pass parameter files
 source parameter
 
-# local id and directory
-iproc=$SLURM_PROCID  # ID of the source (from 0 to $numprocs-1)
+# local id (from 0 to $ntasks-1)
+if [ $system == 'slurm' ]; then
+    iproc=$SLURM_PROCID  
+elif [ $system == 'pbs' ]; then
+    iproc=$PBS_VNODENUM
+fi
+
 IPROC_WORKING_DIR=$( seq --format="$WORKING_DIR/%06.f/" $iproc $iproc ) # working directory (on local nodes, where specfem runs)
 IPROC_DATA_DIR=$( seq --format="$DATA_DIR/%06.f/" $iproc $iproc )
 rm -rf $IPROC_WORKING_DIR
@@ -105,6 +110,8 @@ fi
 
 # save
   cp OUTPUT_FILES/*_file_single.su            DATA_obs/
+  #mkdir -p $IPROC_DATA_DIR
+  #cp -r DATA_obs/* $IPROC_DATA_DIR/
 
 # process & stores output (use the process flow for syn)
   if ${XCOMP}; then
@@ -120,5 +127,6 @@ fi
   sh ./SU_process/syn_process.sh DATA_obs/Up_file_single.su DATA_obs/Up_file_single_processed.su
   fi
 
+    
 fi # exist data
 
